@@ -46,10 +46,10 @@ if [[ $$DB_NAME == "all" ]] ; then \
 echo "Exporting all databases..." ; \
 psql --tuples-only -P format=unaligned -U postgres \
   -c "SELECT datname FROM pg_database WHERE NOT datistemplate AND datname <> 'postgres'" | \
-  while read d ; do echo $$d ; pg_dump -d $$d -U postgres -Ft | gzip > $$DCAPE_DB_DUMP_DEST/$${d}-$${dt}.tgz ; done ; \
+  while read d ; do echo $$d ; pg_dump -d $$d -U postgres -Ft | gzip > $$DCAPE_DB_DUMP_DEST/$${d%%.*}-$${dt}.tgz ; done ; \
 else \
 echo "Exporting database $$DB_NAME..." ; \
-pg_dump -d $$DB_NAME -U postgres -Ft | gzip > $$DCAPE_DB_DUMP_DEST/$${DB_NAME}-$${dt}.tgz ; \
+pg_dump -d $$DB_NAME -U postgres -Ft | gzip > $$DCAPE_DB_DUMP_DEST/$${DB_NAME%%.*}-$${dt}.tgz ; \
 fi
 endef
 export EXP_SCRIPT

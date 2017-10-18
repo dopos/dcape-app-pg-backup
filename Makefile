@@ -39,18 +39,22 @@ export CONFIG_DEF
 
 define EXP_SCRIPT
 [[ "$$DCAPE_DB_DUMP_DEST" ]] || { echo "DCAPE_DB_DUMP_DEST not set. Exiting" ; exit 1 ; } ; \
-DB_NAME=$$1 ; \
-[[ "$$DB_NAME" ]] || DB_NAME=all ; \
+DBS=$$@ ; \
+[[ "$$DBS" ]] || DBS=all ; \
 dt=$$(date +%y%m%d) ; \
-if [[ $$DB_NAME == "all" ]] ; then \
-echo "Exporting all databases..." ; \
-psql --tuples-only -P format=unaligned -U postgres \
-  -c "SELECT datname FROM pg_database WHERE NOT datistemplate AND datname <> 'postgres'" | \
-  while read d ; do echo $$d ; pg_dump -d $$d -U postgres -Ft | gzip > $$DCAPE_DB_DUMP_DEST/$${d%%.*}-$${dt}.tgz ; done ; \
-else \
-echo "Exporting database $$DB_NAME..." ; \
-pg_dump -d $$DB_NAME -U postgres -Ft | gzip > $$DCAPE_DB_DUMP_DEST/$${DB_NAME%%.*}-$${dt}.tgz ; \
-fi
+if [[ $$DBS == "all" ]] ; then \
+  echo "Exporting all databases..." ; \
+  DBS=$$(psql --tuples-only -P format=unaligned -U postgres \
+    -c "SELECT datname FROM pg_database WHERE NOT datistemplate AND datname <> 'postgres'") ; \
+fi ; \
+echo "Backup DBs: $$DBS" ; \
+for d in $$DBS ; do \
+  dest=$$DCAPE_DB_DUMP_DEST/$${d%%.*}-$${dt}.tgz ; \
+  echo -n $${dest}... ; \
+  [ -f $$dest ] && { echo Skip ; continue ; } ; \
+  pg_dump -d $$d -U postgres -Ft | gzip > $$dest || echo "error" ; \
+  echo Done ; \
+done
 endef
 export EXP_SCRIPT
 
@@ -97,7 +101,7 @@ cron: /etc/cron.d/backup
 ## dump all databases or named database
 backup: docker-wait
 	@echo "*** $@ ***"
-	[[ "$$BACKUP_ENABLED" == "yes" ]] && echo "$$EXP_SCRIPT" | docker exec -i $$DCAPE_DB bash -s - $$DB_NAME
+	@[[ "$$BACKUP_ENABLED" == "yes" ]] && echo "$$EXP_SCRIPT" | docker exec -i $$DCAPE_DB bash -s - $$DB_NAME
 
 cleanup:
 	[ -f /etc/cron.d/backup ] && rm /etc/cron.d/backup || true
@@ -106,7 +110,7 @@ cleanup:
 
 ## create initial config
 $(CFG):
-	@echo "$$CONFIG_DEF" > $@
+	@[ -f $@ ] || echo "$$CONFIG_DEF" > $@
 
 # ------------------------------------------------------------------------------
 

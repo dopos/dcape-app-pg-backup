@@ -96,7 +96,7 @@ docker-wait:
 cron: /etc/cron.d/backup
 
 /etc/cron.d/backup:
-	echo "$$BACKUP_CRON op bash cd $$PWD && make backup" > $@
+	echo "$$BACKUP_CRON op cd $$PWD && make backup" > $@
 
 ## dump all databases or named database
 backup: docker-wait

@@ -9,6 +9,10 @@ BACKUP_ENABLED     ?= no
 DB_NAME            ?= template1
 # Cron args
 BACKUP_CRON        ?= 10 5 * * *
+# The address to which error messages will be sent
+# to change address you need delete file /etc/cron.d/backup,
+# change address and update deploy 
+EMAIL_ADMIN        ?= admin@domain.local
 
 # dcape container name prefix
 DCAPE_PROJECT_NAME ?= dcape
@@ -26,6 +30,10 @@ BACKUP_ENABLED=$(BACKUP_ENABLED)
 DB_NAME=$(DB_NAME)
 # Cron args
 BACKUP_CRON=$(BACKUP_CRON)
+# The address to which error messages will be sent
+# to change address you need delete file /etc/cron.d/backup,
+# change address and update deploy 
+EMAIL_ADMIN=$(EMAIL_ADMIN)
 
 # dcape postgresql container name
 DCAPE_DB=$(DCAPE_DB)
@@ -93,10 +101,15 @@ docker-wait:
 # DB operations
 
 ## Setup host system cron
+## If need change the target "cron", you need delete file /etc/cron.d/backup
+## otherwise: make cron -> make: nothing to do for cron
 cron: /etc/cron.d/backup
 
 /etc/cron.d/backup:
-	echo "$$BACKUP_CRON op cd $$PWD && make backup" > $@
+	echo "# Set the email to wich error message will be sent" > $@
+	echo "MAILTO=$$EMAIL_ADMIN" >> $@
+	echo "# Set cron command with disable STDOUT for cron sent mail only if error exist" >> $@
+	echo "$$BACKUP_CRON op cd $$PWD && make backup > /dev/null" >> $@
 
 ## dump all databases or named database
 backup: docker-wait

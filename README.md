@@ -9,6 +9,7 @@
 [5]: LICENSE
 
 Postgresql database backup application package for [dcape](https://github.com/dopos/dcape).
+The service uses a cron to backup all or selected databases deployed to dcape and sends a report by e-mail in cases of an error.
 
 ## Docker image used
 

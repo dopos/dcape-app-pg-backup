@@ -8,14 +8,20 @@ BACKUP_ENABLED  ?= no
 DB_NAME         ?= template1
 BACKUP_CRON     ?= 10 5 * * *
 
-# dcape v1 config
-APP_TAG         ?= $(DCAPE_PROJECT_NAME)
-PG_CONTAINER    ?= $(DCAPE_DB)
-
-APP_TAG         ?= pg-backup
-PG_CONTAINER    ?= dcape_db_1
 DCAPE_COMPOSE   ?= dcape_drone-compose
 DC_VER          ?= latest
+
+# dcape v1 compat
+ifdef DCAPE_PROJECT_NAME
+    APP_TAG         := $(DCAPE_PROJECT_NAME)
+else
+    APP_TAG         ?= pg-backup
+endif
+ifdef DCAPE_DB
+    PG_CONTAINER    := $(DCAPE_DB)
+else
+    PG_CONTAINER    ?= dcape_db_1
+endif
 
 # ------------------------------------------------------------------------------
 define CONFIG_DEF

@@ -10,9 +10,16 @@
 
 Postgresql database backup application package for [dcape](https://github.com/dopos/dcape).
 
+## Dcape v1 notes
+
+This version supports dcape v1 and v2 with the following differences for v1:
+
+* v1 deploy uses `make .env` for the first run, but now we use `make .env.sample` instead. You should create new config by hand
+
 ## Docker image used
 
-* none (used running dcape_db container)
+* dcape v1: none (used running dcape_db container)
+* dcape v2: internally built image with name stored in ${DCAPE_COMPOSE} drone var
 
 ## Requirements
 
@@ -31,12 +38,8 @@ Postgresql database backup application package for [dcape](https://github.com/do
 
 See also: [Deploy setup](https://github.com/dopos/dcape/blob/master/DEPLOY.md) (in Russian)
 
-## TODO
-
-* [x] Do not overwrite existing backups for current date
-
 ## License
 
 The MIT License (MIT), see [LICENSE](LICENSE).
 
-Copyright (c) 2017 Alexey Kovrizhkin <lekovr+dopos@gmail.com>
+Copyright (c) 2017-2021 Alexey Kovrizhkin <lekovr+dopos@gmail.com>

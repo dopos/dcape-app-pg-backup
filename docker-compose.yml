@@ -1,0 +1,18 @@
+
+version: '2'
+
+services:
+  cron:
+    restart: always
+    environment:
+      - BACKUP_ENABLED
+      - DB_NAME
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    build:
+      context: .
+      args:
+        - DCAPE_COMPOSE
+        - BACKUP_CRON

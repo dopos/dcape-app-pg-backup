@@ -1,22 +1,24 @@
-# dcape-app-pg-backup Makefile
+## dcape-app-pg-backup Makefile:
+## Backup pg databases via docker container with crond
+#:
+SHELL      = /bin/sh
+CFG       ?= .env
 
-SHELL               = /bin/bash
-CFG                ?= .env
+BACKUP_ENABLED  ?= no
+DB_NAME         ?= template1
+BACKUP_CRON     ?= 10 5 * * *
 
-# Process backups
-BACKUP_ENABLED     ?= no
-# Backup database name(s)
-DB_NAME            ?= template1
-# Cron args
-BACKUP_CRON        ?= 10 5 * * *
+# dcape v1 config
+APP_TAG         ?= $(DCAPE_PROJECT_NAME)
+PG_CONTAINER    ?= $(DCAPE_DB)
 
-# dcape container name prefix
-DCAPE_PROJECT_NAME ?= dcape
-# dcape postgresql container name
-DCAPE_DB           ?= $(DCAPE_PROJECT_NAME)_db_1
+APP_TAG         ?= pg-backup
+PG_CONTAINER    ?= dcape_db_1
+DCAPE_COMPOSE   ?= dcape_drone-compose
+DC_VER          ?= latest
 
-define CONFIG_DEF
 # ------------------------------------------------------------------------------
+define CONFIG_DEF
 # dcape-app-backup-pg settings
 
 # Process backups
@@ -24,11 +26,9 @@ BACKUP_ENABLED=$(BACKUP_ENABLED)
 
 # Backup database name(s)
 DB_NAME=$(DB_NAME)
+
 # Cron args
 BACKUP_CRON=$(BACKUP_CRON)
-
-# dcape postgresql container name
-DCAPE_DB=$(DCAPE_DB)
 
 endef
 export CONFIG_DEF
@@ -38,7 +38,7 @@ export CONFIG_DEF
 # DCAPE_DB_DUMP_DEST must be set in pg container
 
 define EXP_SCRIPT
-[[ "$$DCAPE_DB_DUMP_DEST" ]] || { echo "DCAPE_DB_DUMP_DEST not set. Exiting" ; exit 1 ; } ; \
+[ "$$DCAPE_DB_DUMP_DEST" ] || { echo "DCAPE_DB_DUMP_DEST not set. Exiting" ; exit 1 ; } ; \
 DBS=$$@ ; \
 [[ "$$DBS" ]] || DBS=all ; \
 dt=$$(date +%y%m%d) ; \
@@ -65,32 +65,23 @@ export
 
 .PHONY: all $(CFG) start start-hook stop update docker-wait cron backup help
 
-##
-## Цели:
-##
-
 all: help
 
 # ------------------------------------------------------------------------------
-# webhook commands
+## dcape v1 deploy targets
+#:
 
+## create crontab record and run backup
 start-hook: cron backup
 
+## remove cron
 stop: cleanup
 
+## run backup
 update: backup
 
-# ------------------------------------------------------------------------------
-# docker
-
-# Wait for postgresql container start
-docker-wait:
-	@echo -n "Checking PG is ready..."
-	@until [[ `docker inspect -f "{{.State.Health.Status}}" $$DCAPE_DB` == healthy ]] ; do sleep 1 ; echo -n "." ; done
-	@echo "Ok"
-
-# ------------------------------------------------------------------------------
-# DB operations
+## dcape v1 operations
+#:
 
 ## Setup host system cron
 cron: /etc/cron.d/backup
@@ -98,26 +89,85 @@ cron: /etc/cron.d/backup
 /etc/cron.d/backup:
 	echo "$$BACKUP_CRON op cd $$PWD && make backup" > $@
 
-## dump all databases or named database
-backup: docker-wait
-	@echo "*** $@ ***"
-	@[[ "$$BACKUP_ENABLED" == "yes" ]] && echo "$$EXP_SCRIPT" | docker exec -i $$DCAPE_DB bash -s - $$DB_NAME
-
+## Clean host system cron
 cleanup:
 	[ -f /etc/cron.d/backup ] && rm /etc/cron.d/backup || true
 
+
 # ------------------------------------------------------------------------------
+# docker
+
+# Wait for postgresql container start
+docker-wait:
+	@echo -n "Checking PG is ready..."
+	@until [ `docker inspect -f "{{.State.Health.Status}}" $$PG_CONTAINER` = "healthy" ] ; do sleep 1 ; echo -n "." ; done
+	@echo "Ok"
+
+# ------------------------------------------------------------------------------
+## DB operations
+#:
+
+## dump all databases or named database
+backup: docker-wait
+	@echo "*** $@ ***"
+	@if [ "$$BACKUP_ENABLED" = "yes" ] ; then echo "$$EXP_SCRIPT" | docker exec -i $$PG_CONTAINER bash -s - $$DB_NAME ; else echo Disabled ; fi
+
+# -----------------------------------------------------------------------------
+
+# Run app inside drone
+# Used in .drone.yml
+# Do not use outside
+.drone-up:
+	@echo "*** $@ ***"
+	@[ "$$PWD" = "$(APP_ROOT)" ] && { echo "APP_ROOT == PWD, so we're not inside drone. Aborting" ; exit 1 ; } || true
+	@docker-compose -p "$(APP_TAG)" up --force-recreate --build -d
+
+
+# -----------------------------------------------------------------------------
+## Docker-compose commands
+#:
+
+## (re)start container
+up:
+up: CMD=up --force-recreate --build -d
+up: dc
+
+## stop (and remove) container
+down:
+down: CMD=rm -f -s
+down: dc
+
+# $$PWD usage allows host directory mounts in child containers
+# Thish works if path is the same for host, docker, docker-compose and child container
+## run $(CMD) via docker-compose
+dc: docker-compose.yml
+	@docker run --rm  -i \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v $$PWD:$$PWD -w $$PWD \
+  -e DCAPE_COMPOSE \
+  docker/compose:$$DC_VER \
+  -p $$APP_TAG --env-file $(CFG) \
+  $(CMD)
+
+# ------------------------------------------------------------------------------
+## Other
+#:
 
 ## create initial config
-$(CFG):
-	@[ -f $@ ] || echo "$$CONFIG_DEF" > $@
+$(CFG).sample:
+	@echo "$$CONFIG_DEF" > $@
+	@echo "$@ Created. Edit and rename to $(CFG)"
+
+## generate sample config
+config: $(CFG).sample
 
 # ------------------------------------------------------------------------------
 
-## List Makefile targets
+# This code handles group header and target comment with one or two lines only
+## list Makefile targets
+## (this is defailt target)
 help:
-	@grep -A 1 "^##" Makefile | less
-
-##
-## Press 'q' for exit
-##
+	@grep -A 1 -h "^## " $(MAKEFILE_LIST) \
+  | sed -E 's/^--$$// ; /./{H;$$!d} ; x ; s/^\n## ([^\n]+)\n(## (.+)\n)*(.+):(.*)$$/"    " "\4" "\1" "\3"/' \
+  | sed -E 's/^"    " "#" "(.+)" "(.*)"$$/"" "" "" ""\n"\1 \2" "" "" ""/' \
+  | xargs printf "%s\033[36m%-15s\033[0m %s %s\n"

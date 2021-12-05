@@ -171,7 +171,7 @@ config: $(CFG).sample
 
 # This code handles group header and target comment with one or two lines only
 ## list Makefile targets
-## (this is defailt target)
+## (this is default target)
 help:
 	@grep -A 1 -h "^## " $(MAKEFILE_LIST) \
   | sed -E 's/^--$$// ; /./{H;$$!d} ; x ; s/^\n## ([^\n]+)\n(## (.+)\n)*(.+):(.*)$$/"    " "\4" "\1" "\3"/' \

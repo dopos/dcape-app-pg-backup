@@ -6,7 +6,9 @@ ARG BACKUP_CRON
 
 MAINTAINER Alexey Kovrizhkin <lekovr+dopos@gmail.com>
 
-ENV DOCKERFILE_VERSION  20210108
+ENV DOCKERFILE_VERSION  20211205
+
+RUN apk add --no-cache busybox-initscripts
 
 COPY Makefile /root/
 
@@ -14,5 +16,7 @@ COPY Makefile /root/
 ENV CRONTAB $BACKUP_CRON
 
 RUN echo "$BACKUP_CRON    make backup" > /etc/crontabs/root
+
+ENTRYPOINT []
 
 CMD ["crond", "-l", "2", "-f"]

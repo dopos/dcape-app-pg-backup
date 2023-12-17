@@ -7,12 +7,14 @@ services:
     environment:
       - BACKUP_ENABLED
       - DB_NAME
+      - DB_CONTAINER
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock
-    build:
-      context: .
-      args:
-        - DCAPE_COMPOSE
-        - BACKUP_CRON
+      - ./pgbackup.sh:/etc/periodic/${BACKUP_PERIOD}/pgbackup.sh
+      - ./Makefile:/root/Makefile
+    stop_signal: SIGKILL
+    pull_policy: never
+    image: $DCAPE_COMPOSE
+    command: crond -f -d 8

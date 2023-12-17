@@ -17,6 +17,5 @@ steps:
     image: *dcape_img
     commands:
       - make .default-deploy
-      - make .drone-up backup
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

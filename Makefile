@@ -10,10 +10,12 @@ BACKUP_ENABLED  ?= no
 DB_NAME         ?= template1
 #- Cron rules
 BACKUP_CRON     ?= 10 5 * * *
+#- cron period (15min|daily|hourly|monthly|weekly)
+BACKUP_PERIOD   ?= daily
 #- project name
 APP_TAG         ?= pg-backup
-#- container name
-PG_CONTAINER    ?= dcape_db_1
+
+USE_DCAPE_DC    := no
 
 # ------------------------------------------------------------------------------
 # Create script
@@ -45,12 +47,9 @@ export EXP_SCRIPT
 -include $(CFG)
 export
 
-.PHONY: all $(CFG) start start-hook stop update docker-wait cron backup help
-
-all: help
-
 # ------------------------------------------------------------------------------
 # Find and include DCAPE_ROOT/Makefile
+#- dcape compose docker image
 DCAPE_COMPOSE   ?= dcape-compose
 DCAPE_ROOT      ?= $(shell docker inspect -f "{{.Config.Labels.dcape_root}}" $(DCAPE_COMPOSE))
 
@@ -63,19 +62,13 @@ endif
 # ------------------------------------------------------------------------------
 ## DB operations
 #:
+.PHONY: backup
 
 ## dump all databases or named database
 backup: docker-wait
 	@echo "*** $@ ***"
-	@if [ "$$BACKUP_ENABLED" = "yes" ] ; then echo "$$EXP_SCRIPT" | docker exec -i $$PG_CONTAINER bash -s - $$DB_NAME ; else echo Disabled ; fi
+	@if [ "$$BACKUP_ENABLED" = "yes" ] ; then echo "$$EXP_SCRIPT" | docker exec -i $$DB_CONTAINER bash -s - $$DB_NAME ; else echo Disabled ; fi
 
 # -----------------------------------------------------------------------------
 
-# Run app inside drone
-# Used in .drone.yml
-# Do not use outside
-.drone-up:
-	@echo "*** $@ ***"
-	@[ "$$PWD" = "$(APP_ROOT)" ] && { echo "APP_ROOT == PWD, so we're not inside drone. Aborting" ; exit 1 ; } || true
-	@docker compose -p "$(APP_TAG)" up --force-recreate --build -d
-
+# echo "$$BACKUP_CRON    make backup" > /etc/crontabs/root

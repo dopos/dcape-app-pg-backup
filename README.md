@@ -38,6 +38,17 @@ This version supports dcape v1 and v2 with the following differences for v1:
 
 See also: [Deploy setup](https://github.com/dopos/dcape/blob/master/DEPLOY.md) (in Russian)
 
+## Direct run
+
+```
+docker exec -ti pg-backup-cron-1 bash -c 'cd /root && /etc/periodic/15min/pgbackup.sh'
+```
+or
+```
+make backup
+```
+
+
 ## License
 
 The MIT License (MIT), see [LICENSE](LICENSE).

@@ -17,7 +17,7 @@ APP_TAG         ?= pg-backup
 #- app root
 APP_ROOT        ?= $(PWD)
 #- db container
-DB_CONTAINER    ?= $(DB_CONTAINER)
+DB_CONTAINER    ?= #
 
 PERSIST_FILES    = Makefile pgbackup.sh
 

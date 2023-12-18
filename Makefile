@@ -14,6 +14,10 @@ BACKUP_CRON     ?= 10 5 * * *
 BACKUP_PERIOD   ?= daily
 #- project name
 APP_TAG         ?= pg-backup
+#- app root
+APP_ROOT        ?= $(PWD)
+
+PERSIST_FILES    = Makefile pgbackup.sh
 
 USE_DCAPE_DC    := no
 

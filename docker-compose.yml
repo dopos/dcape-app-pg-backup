@@ -12,8 +12,8 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./pgbackup.sh:/etc/periodic/${BACKUP_PERIOD}/pgbackup.sh
-      - ./Makefile:/root/Makefile
+      - ${APP_ROOT}/pgbackup.sh:/etc/periodic/${BACKUP_PERIOD}/pgbackup.sh
+      - ${APP_ROOT}/Makefile:/root/Makefile
     stop_signal: SIGKILL
     pull_policy: never
     image: $DCAPE_COMPOSE

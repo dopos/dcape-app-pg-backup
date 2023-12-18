@@ -39,6 +39,12 @@ If installed via CI/CD
 ```
 docker exec -ti pg-backup-cron-1 bash -c 'cd /root && /etc/periodic/daily/pgbackup.sh'
 ```
+
+For custom database
+```
+docker exec -it pg-backup-cron-1 bash -c "make -f /root/Makefile backup DB_NAME=pdns"
+```
+
 If installed locally
 ```
 make backup

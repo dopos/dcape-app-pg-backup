@@ -8,24 +8,19 @@
 [4]: https://img.shields.io/github/license/dopos/dcape-app-pg-backup.svg
 [5]: LICENSE
 
-Postgresql database backup application package for [dcape](https://github.com/dopos/dcape).
-
-## Dcape v1 notes
-
-This version supports dcape v1 and v2 with the following differences for v1:
-
-* v1 deploy uses `make .env` for the first run, but now we use `make .env.sample` instead. You should create new config by hand
+Postgresql database backup application package for [dcape](https://github.com/dopos/dcape) v3.
 
 ## Docker image used
 
 * dcape v1: none (used running dcape_db container)
 * dcape v2: internally built image with name stored in ${DCAPE_COMPOSE} drone var
+* dcape v3: dcape-compose (cron uses running dcape_db container)
 
 ## Requirements
 
 * linux 64bit (git, make, wget, gawk, openssl)
 * [docker](http://docker.io)
-* [dcape](https://github.com/dopos/dcape)
+* [dcape](https://github.com/dopos/dcape) v3
 * Git service ([github](https://github.com), [gitea](https://gitea.io) or [gogs](https://gogs.io))
 
 ## Usage
@@ -40,17 +35,17 @@ See also: [Deploy setup](https://github.com/dopos/dcape/blob/master/DEPLOY.md) (
 
 ## Direct run
 
+If installed via CI/CD
 ```
-docker exec -ti pg-backup-cron-1 bash -c 'cd /root && /etc/periodic/15min/pgbackup.sh'
+docker exec -ti pg-backup-cron-1 bash -c 'cd /root && /etc/periodic/daily/pgbackup.sh'
 ```
-or
+If installed locally
 ```
 make backup
 ```
-
 
 ## License
 
 The MIT License (MIT), see [LICENSE](LICENSE).
 
-Copyright (c) 2017-2021 Alexey Kovrizhkin <lekovr+dopos@gmail.com>
+Copyright (c) 2017-2023 Aleksei Kovrizhkin <lekovr+dopos@gmail.com>
